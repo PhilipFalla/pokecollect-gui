@@ -26,11 +26,11 @@ const Dashboard = () => {
             PokéCollection
           </h1>
           <div className="flex items-center gap-3">
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={() => navigate("/add-collection")}>
               <Plus className="h-4 w-4" />
               Add Collection
             </Button>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" onClick={() => navigate("/settings")}>
               <Settings className="h-5 w-5" />
             </Button>
           </div>
@@ -45,7 +45,7 @@ const Dashboard = () => {
               <p className="text-muted-foreground">
                 Start building your Pokémon card collection by creating your first collection.
               </p>
-              <Button className="gap-2 mt-4">
+              <Button className="gap-2 mt-4" onClick={() => navigate("/add-collection")}>
                 <Plus className="h-4 w-4" />
                 Create Your First Collection
               </Button>
