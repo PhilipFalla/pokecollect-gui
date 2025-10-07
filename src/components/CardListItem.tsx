@@ -1,16 +1,18 @@
 import { Card as CardType } from "@/data/sampleData";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar } from "lucide-react";
+import { Calendar, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface CardListItemProps {
   card: CardType;
   formatCurrency: (usd: number) => { gtq: string; usd: string };
   className?: string;
   style?: React.CSSProperties;
+  onDelete?: () => void;
 }
 
-const CardListItem = ({ card, formatCurrency, className = "", style }: CardListItemProps) => {
+const CardListItem = ({ card, formatCurrency, className = "", style, onDelete }: CardListItemProps) => {
   const { gtq, usd } = formatCurrency(card.valueUSD);
 
   const getConditionColor = (condition: string) => {
@@ -71,6 +73,18 @@ const CardListItem = ({ card, formatCurrency, className = "", style }: CardListI
               </div>
             </div>
           </div>
+          {onDelete && (
+            <div className="flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onDelete}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -1,7 +1,28 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, Layers } from "lucide-react";
+import { ArrowLeft, Calendar, Layers, Plus, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -16,8 +37,21 @@ const CollectionDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [exchangeRate, setExchangeRate] = useState(7.75);
-
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState<string | null>(null);
+  
   const collection = sampleCollections.find((c) => c.id === id);
+  const [cards, setCards] = useState(collection?.cards || []);
+
+  // Form state for single card
+  const [newCard, setNewCard] = useState({
+    name: "",
+    setNumber: "",
+    setName: "",
+    condition: "NM" as const,
+    language: "EN" as const,
+    version: "",
+  });
 
   if (!collection) {
     return (
@@ -30,6 +64,36 @@ const CollectionDetail = () => {
     );
   }
 
+  const handleAddCard = () => {
+    const card = {
+      id: `c${Date.now()}`,
+      name: newCard.name,
+      setNumber: newCard.setNumber,
+      setName: newCard.setName,
+      condition: newCard.condition,
+      language: newCard.language,
+      version: newCard.version,
+      valueUSD: 0,
+      lastUpdated: new Date().toISOString().split('T')[0],
+      imageUrl: "/placeholder.svg",
+    };
+    setCards([...cards, card]);
+    setNewCard({
+      name: "",
+      setNumber: "",
+      setName: "",
+      condition: "NM",
+      language: "EN",
+      version: "",
+    });
+    setIsAddDialogOpen(false);
+  };
+
+  const handleDeleteCard = (cardId: string) => {
+    setCards(cards.filter(c => c.id !== cardId));
+    setCardToDelete(null);
+  };
+
   const formatCurrency = (usd: number) => {
     const gtq = usd * exchangeRate;
     return {
@@ -38,7 +102,7 @@ const CollectionDetail = () => {
     };
   };
 
-  const totalValue = collection.cards.reduce((sum, card) => sum + card.valueUSD, 0);
+  const totalValue = cards.reduce((sum, card) => sum + card.valueUSD, 0);
   const { gtq, usd } = formatCurrency(totalValue);
 
   return (
@@ -80,7 +144,132 @@ const CollectionDetail = () => {
 
       <main className="container mx-auto px-4 py-8">
         <div className="bg-gradient-card rounded-lg p-6 shadow-card mb-8 animate-fade-in">
-          <h1 className="text-3xl font-bold mb-4">{collection.title}</h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-3xl font-bold">{collection.title}</h1>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Card
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Add Card to Collection</DialogTitle>
+                  <DialogDescription>
+                    Add a single card or upload multiple cards via file.
+                  </DialogDescription>
+                </DialogHeader>
+                <Tabs defaultValue="single" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="single">Add Single Card</TabsTrigger>
+                    <TabsTrigger value="multiple">Add Multiple Cards</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="single" className="space-y-4 mt-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Card Name</Label>
+                        <Input
+                          id="name"
+                          value={newCard.name}
+                          onChange={(e) => setNewCard({ ...newCard, name: e.target.value })}
+                          placeholder="e.g., Charizard"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="setNumber">Number in Set</Label>
+                        <Input
+                          id="setNumber"
+                          value={newCard.setNumber}
+                          onChange={(e) => setNewCard({ ...newCard, setNumber: e.target.value })}
+                          placeholder="e.g., 4/102"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="setName">Set Name</Label>
+                        <Input
+                          id="setName"
+                          value={newCard.setName}
+                          onChange={(e) => setNewCard({ ...newCard, setName: e.target.value })}
+                          placeholder="e.g., Base Set"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="condition">Condition</Label>
+                        <Select
+                          value={newCard.condition}
+                          onValueChange={(value: any) => setNewCard({ ...newCard, condition: value })}
+                        >
+                          <SelectTrigger id="condition">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="NM">NM (Near Mint)</SelectItem>
+                            <SelectItem value="LP">LP (Lightly Played)</SelectItem>
+                            <SelectItem value="MP">MP (Moderately Played)</SelectItem>
+                            <SelectItem value="HP">HP (Heavily Played)</SelectItem>
+                            <SelectItem value="DMG">DMG (Damaged)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="language">Language</Label>
+                        <Select
+                          value={newCard.language}
+                          onValueChange={(value: any) => setNewCard({ ...newCard, language: value })}
+                        >
+                          <SelectTrigger id="language">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="EN">English</SelectItem>
+                            <SelectItem value="JP">Japanese</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="version">Version</Label>
+                        <Input
+                          id="version"
+                          value={newCard.version}
+                          onChange={(e) => setNewCard({ ...newCard, version: e.target.value })}
+                          placeholder="e.g., 1st Edition Holo"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAddCard} disabled={!newCard.name || !newCard.setName}>
+                        Add Card
+                      </Button>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="multiple" className="space-y-4 mt-4">
+                    <div className="space-y-4">
+                      <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+                        <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Upload a CSV or XLS file with your card data
+                        </p>
+                        <Input type="file" accept=".csv,.xls,.xlsx" className="max-w-xs mx-auto" />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Expected format: Name, Set Number, Set Name, Condition, Language, Version
+                      </p>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button disabled>Upload Cards</Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </DialogContent>
+            </Dialog>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Total Collection Value</p>
@@ -94,7 +283,7 @@ const CollectionDetail = () => {
                 <Layers className="h-4 w-4" />
                 Number of Cards
               </p>
-              <p className="text-3xl font-bold">{collection.cards.length}</p>
+              <p className="text-3xl font-bold">{cards.length}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground flex items-center gap-1">
@@ -109,18 +298,36 @@ const CollectionDetail = () => {
         <div className="space-y-4">
           <h2 className="text-2xl font-bold">Cards in Collection</h2>
           <div className="space-y-3">
-            {collection.cards.map((card, index) => (
+            {cards.map((card, index) => (
               <CardListItem
                 key={card.id}
                 card={card}
                 formatCurrency={formatCurrency}
                 style={{ animationDelay: `${index * 0.05}s` }}
                 className="animate-slide-up"
+                onDelete={() => setCardToDelete(card.id)}
               />
             ))}
           </div>
         </div>
       </main>
+
+      <AlertDialog open={!!cardToDelete} onOpenChange={() => setCardToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Card</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this card from your collection? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => cardToDelete && handleDeleteCard(cardToDelete)}>
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
