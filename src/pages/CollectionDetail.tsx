@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, Layers, Plus, Upload } from "lucide-react";
+import { ArrowLeft, Calendar, Layers, Plus, Upload, Share2, Download, Link2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,8 +30,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { sampleCollections } from "@/data/sampleData";
 import CardListItem from "@/components/CardListItem";
+import { formatNumber } from "@/lib/utils";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const CollectionDetail = () => {
   const { id } = useParams();
@@ -39,6 +47,8 @@ const CollectionDetail = () => {
   const [exchangeRate, setExchangeRate] = useState(7.75);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<string | null>(null);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
   
   const collection = sampleCollections.find((c) => c.id === id);
   const [cards, setCards] = useState(collection?.cards || []);
@@ -97,9 +107,56 @@ const CollectionDetail = () => {
   const formatCurrency = (usd: number) => {
     const gtq = usd * exchangeRate;
     return {
-      gtq: gtq.toFixed(2),
-      usd: usd.toFixed(2),
+      gtq: formatNumber(gtq),
+      usd: formatNumber(usd),
     };
+  };
+
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.text(collection.title, 14, 20);
+    
+    // Add collection info
+    doc.setFontSize(12);
+    doc.text(`Total Value: Q${gtq} (USD $${usd})`, 14, 30);
+    doc.text(`Number of Cards: ${cards.length}`, 14, 37);
+    doc.text(`Last Updated: ${collection.lastUpdated}`, 14, 44);
+    
+    // Add cards table
+    const tableData = cards.map(card => {
+      const { gtq, usd } = formatCurrency(card.valueUSD);
+      return [
+        card.name,
+        card.setNumber,
+        card.setName,
+        card.condition,
+        card.language,
+        card.version,
+        `Q${gtq}`,
+        `$${usd}`,
+      ];
+    });
+    
+    autoTable(doc, {
+      head: [['Name', 'Set #', 'Set Name', 'Condition', 'Lang', 'Version', 'GTQ', 'USD']],
+      body: tableData,
+      startY: 50,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+    
+    doc.save(`${collection.title}.pdf`);
+    setIsShareOpen(false);
+  };
+
+  const handleCopyURL = () => {
+    const url = `https://myapp.com/collections/${id}`;
+    navigator.clipboard.writeText(url);
+    setUrlCopied(true);
+    setTimeout(() => setUrlCopied(false), 2000);
   };
 
   const totalValue = cards.reduce((sum, card) => sum + card.valueUSD, 0);
@@ -146,14 +203,59 @@ const CollectionDetail = () => {
         <div className="bg-gradient-card rounded-lg p-6 shadow-card mb-8 animate-fade-in">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-3xl font-bold">{collection.title}</h1>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add Card
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+            <div className="flex gap-2">
+              <Popover open={isShareOpen} onOpenChange={setIsShareOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Share2 className="h-4 w-4" />
+                    Share
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm">Share Collection</h3>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-2"
+                      onClick={handleDownloadPDF}
+                    >
+                      <Download className="h-4 w-4" />
+                      Download PDF
+                    </Button>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          readOnly
+                          value={`https://myapp.com/collections/${id}`}
+                          className="text-xs"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={handleCopyURL}
+                        >
+                          {urlCopied ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <Link2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Get shareable URL
+                      </p>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add Card
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Add Card to Collection</DialogTitle>
                   <DialogDescription>
@@ -269,6 +371,7 @@ const CollectionDetail = () => {
                 </Tabs>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-1">
