@@ -5,10 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Bell, DollarSign, Shield } from "lucide-react";
+import { ArrowLeft, User, Bell, DollarSign, Shield, Globe } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { language, setLanguage, t } = useLanguage();
   const [settings, setSettings] = useState({
     email: "user@example.com",
     defaultExchangeRate: "7.75",
@@ -35,7 +44,7 @@ const Settings = () => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-2xl font-bold bg-gradient-pokemon bg-clip-text text-transparent">
-              Settings
+              {t("settings.title")}
             </h1>
           </div>
         </div>
@@ -47,10 +56,10 @@ const Settings = () => {
           <div className="bg-card rounded-lg border p-6 space-y-4">
             <div className="flex items-center gap-2 mb-4">
               <User className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">Account</h2>
+              <h2 className="text-xl font-semibold">{t("settings.account")}</h2>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">{t("settings.email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -61,18 +70,44 @@ const Settings = () => {
               />
             </div>
             <Button variant="outline" className="w-full">
-              Change Password
+              {t("settings.changePassword")}
             </Button>
+          </div>
+
+          {/* Language Settings */}
+          <div className="bg-card rounded-lg border p-6 space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-semibold">{t("settings.language")}</h2>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="language">{t("settings.appLanguage")}</Label>
+              <Select
+                value={language}
+                onValueChange={(value: "EN" | "ES") => setLanguage(value)}
+              >
+                <SelectTrigger id="language">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EN">English</SelectItem>
+                  <SelectItem value="ES">Español</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                {t("settings.selectLanguage")}
+              </p>
+            </div>
           </div>
 
           {/* Currency Settings */}
           <div className="bg-card rounded-lg border p-6 space-y-4">
             <div className="flex items-center gap-2 mb-4">
               <DollarSign className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">Currency</h2>
+              <h2 className="text-xl font-semibold">{t("settings.currency")}</h2>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="exchangeRate">Default Exchange Rate (USD to GTQ)</Label>
+              <Label htmlFor="exchangeRate">{t("settings.exchangeRate")}</Label>
               <Input
                 id="exchangeRate"
                 type="number"
@@ -85,7 +120,7 @@ const Settings = () => {
                 }
               />
               <p className="text-sm text-muted-foreground">
-                This will be used as the default rate for new collections
+                {t("settings.exchangeRateDesc")}
               </p>
             </div>
           </div>
@@ -94,14 +129,14 @@ const Settings = () => {
           <div className="bg-card rounded-lg border p-6 space-y-4">
             <div className="flex items-center gap-2 mb-4">
               <Bell className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">Notifications</h2>
+              <h2 className="text-xl font-semibold">{t("settings.notifications")}</h2>
             </div>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Email Notifications</Label>
+                  <Label>{t("settings.emailNotifications")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Receive updates about your collections
+                    {t("settings.emailNotificationsDesc")}
                   </p>
                 </div>
                 <Switch
@@ -114,9 +149,9 @@ const Settings = () => {
               <Separator />
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Price Alerts</Label>
+                  <Label>{t("settings.priceAlerts")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Get notified when card values change significantly
+                    {t("settings.priceAlertsDesc")}
                   </p>
                 </div>
                 <Switch
@@ -129,9 +164,9 @@ const Settings = () => {
               <Separator />
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Auto-Update Prices</Label>
+                  <Label>{t("settings.autoUpdate")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Automatically update card prices daily
+                    {t("settings.autoUpdateDesc")}
                   </p>
                 </div>
                 <Switch
@@ -148,27 +183,27 @@ const Settings = () => {
           <div className="bg-card rounded-lg border p-6 space-y-4">
             <div className="flex items-center gap-2 mb-4">
               <Shield className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">Privacy & Security</h2>
+              <h2 className="text-xl font-semibold">{t("settings.privacy")}</h2>
             </div>
             <Button variant="outline" className="w-full">
-              Export My Data
+              {t("settings.exportData")}
             </Button>
             <Button variant="destructive" className="w-full">
-              Delete Account
+              {t("settings.deleteAccount")}
             </Button>
           </div>
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
             <Button onClick={handleSave} className="flex-1">
-              Save Changes
+              {t("settings.save")}
             </Button>
             <Button
               variant="outline"
               className="flex-1"
               onClick={() => navigate("/dashboard")}
             >
-              Cancel
+              {t("settings.cancel")}
             </Button>
           </div>
         </div>
